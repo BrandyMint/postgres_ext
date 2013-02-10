@@ -52,8 +52,8 @@ module ActiveRecord
 
         # then dump all non-primary key columns
         column_specs = columns.map do |column|
-          raise StandardError, "Unknown type '#{column.sql_type}' for column '#{column.name}'" if @types[column.type].nil?
           next if column.name == pk
+
           spec = column_spec(column)
           (spec.keys - [:name, :type]).each{ |k| spec[k].insert(0, "#{k.inspect} => ")}
           spec
@@ -140,9 +140,9 @@ module ActiveRecord
       spec[:type]      = if column.type == :integer && [/^numeric/, /^decimal/].any? { |e| e.match(column.sql_type) }
                            'decimal'
                          else
-                           column.type.to_s
+                           column.type.nil? ? column.sql_type : column.type.to_s
                          end
-      spec[:limit]     = column.limit.inspect if column.limit != @types[column.type][:limit] && spec[:type] != 'decimal'
+      spec[:limit]     = column.limit.inspect if !@types[column.type].nil? && column.limit != @types[column.type][:limit] && spec[:type] != 'decimal'
       spec[:precision] = column.precision.inspect if column.precision
       spec[:scale]     = column.scale.inspect if column.scale
       spec[:null]      = 'false' unless column.null
